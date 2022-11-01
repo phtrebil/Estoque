@@ -11,7 +11,6 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.List;
 
 import br.com.alura.estoque.R;
-import br.com.alura.estoque.asynctask.BaseAsyncTask;
 import br.com.alura.estoque.database.EstoqueDatabase;
 import br.com.alura.estoque.database.dao.ProdutoDAO;
 import br.com.alura.estoque.model.Produto;
@@ -58,17 +57,23 @@ public class ListaProdutosActivity extends AppCompatActivity {
         RecyclerView listaProdutos = findViewById(R.id.activity_lista_produtos_lista);
         adapter = new ListaProdutosAdapter(this, this::abreFormularioEditaProduto);
         listaProdutos.setAdapter(adapter);
-        adapter.setOnItemClickRemoveContextMenuListener(this::remove);
+        adapter.setOnItemClickRemoveContextMenuListener(
+                (posicao, produtoEscolhido) -> repository.remove(produtoEscolhido,
+                        new ProdutoRepository.DadosCarregadosCallback<Void>() {
+                            @Override
+                            public void quandoSucesso(Void resultado) {
+                                adapter.remove(posicao);
+                            }
+
+                            @Override
+                            public void quandoFalha(String erro) {
+                                Toast.makeText(ListaProdutosActivity.this,
+                                        "Não foi possível remover o produto",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        }));
     }
 
-    private void remove(int posicao,
-                        Produto produtoRemovido) {
-        new BaseAsyncTask<>(() -> {
-            dao.remove(produtoRemovido);
-            return null;
-        }, resultado -> adapter.remove(posicao))
-                .execute();
-    }
 
     private void configuraFabSalvaProduto() {
         FloatingActionButton fabAdicionaProduto = findViewById(R.id.activity_lista_produtos_fab_adiciona_produto);
